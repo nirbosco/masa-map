@@ -247,3 +247,27 @@ begin
         'status_at', p.status_at, 'created_at', p.created_at) order by p.created_at)
       from masa_participants p where p.workshop_id = w.id), '[]'::json));
 end $$;
+
+-- ===== גרסה 1.2: עריכת סדנה קיימת מעמוד הניהול =====
+create or replace function masa_list_workshops(p_master text)
+returns json language plpgsql security definer set search_path = public as $$
+begin
+  if p_master is null or p_master <> (select v from masa_config where k = 'master') then raise exception 'not allowed'; end if;
+  return coalesce((select json_agg(json_build_object('code', code, 'name', name, 'admin_key', admin_key, 'created_at', created_at,
+    'allow_chat', allow_chat, 'is_open', is_open,
+    'count', (select count(*) from masa_participants p where p.workshop_id = w.id)) order by created_at desc) from masa_workshops w), '[]'::json);
+end $$;
+
+create or replace function masa_edit_workshop(p_master text, p_code text, p_patch jsonb)
+returns json language plpgsql security definer set search_path = public as $$
+begin
+  if p_master is null or p_master <> (select v from masa_config where k = 'master') then raise exception 'not allowed'; end if;
+  if p_patch ? 'name' and coalesce(trim(p_patch->>'name'), '') = '' then raise exception 'name required'; end if;
+  update masa_workshops set
+    name = coalesce(left(trim(p_patch->>'name'), 60), name),
+    is_open = coalesce((p_patch->>'is_open')::boolean, is_open),
+    allow_chat = coalesce((p_patch->>'allow_chat')::boolean, allow_chat)
+  where code = p_code;
+  return json_build_object('ok', found);
+end $$;
+grant execute on function masa_edit_workshop(text, text, jsonb) to anon, authenticated;
