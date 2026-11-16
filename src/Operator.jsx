@@ -127,6 +127,9 @@ export default function Operator({ adminKey }) {
                     {p.world && <span className="meta">{WORLDS.find((w) => w.id === p.world)?.label}</span>}
                     {p.has_map && p.approved && <span className="chip ok" style={{ width: "fit-content" }}>אישרה להדפסה</span>}
                     {p.typo_note && <span className="chip bad" style={{ width: "fit-content", whiteSpace: "normal" }} title={p.typo_note}>דיווח על טעות: {p.typo_note}</span>}
+                    {p.map_status === "failed" && (
+                      <button className="btn small" style={{ justifySelf: "start" }} onClick={async () => { await fn("admin_regenerate", { admin: adminKey, id: p.id }); load(); }}><Icon n="redo" size={18} />לצייר מחדש</button>
+                    )}
                     {p.has_map && (
                       <div className="btns">
                         <button className="btn small primary" onClick={() => doPrint(p)}><Icon n="print" size={18} />הדפסה</button>
