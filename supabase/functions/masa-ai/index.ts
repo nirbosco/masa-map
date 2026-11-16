@@ -1,6 +1,7 @@
 // מפת המסע שלי · פונקציית השרת היחידה
 // פעולות משתתפת (לפי token), פעולות מפעיל (לפי admin key), ותור יצירה פנימי.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { decodeBase64 } from "jsr:@std/encoding@1/base64";
 
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
 const KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
@@ -22,14 +23,15 @@ const cors = {
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
 
 // ---------- Gemini ----------
-async function gen(model: string, body: unknown, tries = 3): Promise<any> {
+async function gen(model: string, body: unknown, tries = 3, raw = false): Promise<any> {
   let last = "";
   for (let i = 0; i < tries; i++) {
     const r = await fetch(`${GEMINI}/models/${model}:generateContent?key=${KEY}`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
-    if (r.ok) return await r.json();
+    if (r.ok) return raw ? await r.text() : await r.json();
     last = `${r.status} ${(await r.text()).slice(0, 400)}`;
+    console.log("gemini fail", model, last.slice(0, 200));
     if (r.status === 429 || r.status >= 500) { await new Promise((res) => setTimeout(res, 4000 * (i + 1))); continue; }
     break;
   }
@@ -50,6 +52,15 @@ function parseJson(s: string) {
     if (c === '"') inStr = true; else if (c === "{") depth++; else if (c === "}" && --depth === 0) return JSON.parse(t.slice(t.indexOf("{"), i + 1));
   }
   throw new Error("bad json: " + t.slice(0, 200));
+}
+function imageFromRaw(t: string): Uint8Array | null {
+  // התמונה האחרונה בתשובה. חיפוש ישיר של שדה data, בלי לבנות אובייקט ענק
+  const k = t.lastIndexOf('"data":');
+  if (k < 0) return null;
+  const a = t.indexOf('"', k + 7) + 1;
+  const b = t.indexOf('"', a);
+  if (a <= 0 || b <= a || b - a < 1000) return null;
+  return decodeBase64(t.slice(a, b));
 }
 function imageOf(d: any): Uint8Array | null {
   const parts = d?.candidates?.[0]?.content?.parts ?? [];
@@ -276,7 +287,7 @@ async function readMap(bytes: Uint8Array, model = CHECK_MODEL) {
   const prompt = `Transcribe every line of text drawn in this poster, exactly as drawn, without fixing anything. Include digits and Latin letters.
 Reply with JSON only: {"texts":[{"text":"line exactly as drawn"}]}, one entry per line (a heading and the smaller line under it are separate entries).`;
   const d = await gen(model, {
-    contents: [{ parts: [await imagePart(bytes), { text: prompt }] }],
+    contents: [{ parts: [await imagePart(bytes, "image/png", true), { text: prompt }] }],
     generationConfig: { responseMimeType: "application/json", temperature: 0, mediaResolution: "MEDIA_RESOLUTION_HIGH" },
   });
   const r0 = parseJson(textOf(d));
@@ -335,14 +346,24 @@ async function saveVersion(p: any, bytes: Uint8Array, kind: string) {
   return { path, versions };
 }
 
+async function trace(id: string, ev: string) {
+  try { await db.rpc("masa_trace", { p_id: id, p_ev: ev }); } catch { /* */ }
+}
+
 async function stageGenerate(p: any) {
-  const d = await gen(IMAGE_MODEL, {
+  const t0 = Date.now();
+  await trace(p.id, `gen-start a${p.attempts}`);
+  let raw: string | null = await gen(IMAGE_MODEL, {
     contents: [{ parts: [{ text: mapPrompt(p) }] }],
     generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "3:2", imageSize: IMAGE_SIZE } },
-  }, 2);
-  const bytes = imageOf(d);
-  if (!bytes) throw new Error("no image returned: " + JSON.stringify(d).slice(0, 300));
+  }, 2, true);
+  const bytes = imageFromRaw(raw!);
+  const tail = bytes ? "" : raw!.slice(0, 300);
+  raw = null;
+  await trace(p.id, `gen-done ${Math.round((Date.now() - t0) / 1000)}s ${bytes ? bytes.length : 0}b`);
+  if (!bytes) throw new Error("no image returned: " + tail);
   const { path, versions } = await saveVersion(p, bytes, "gen");
+  await trace(p.id, `saved ${Math.round((Date.now() - t0) / 1000)}s`);
   // המפה מוכנה מיד. הבדיקה רצה ברקע ורק מסמנת למפעיל.
   await setStatus(p.id, { map_status: "ready", step: "ready", map_path: path, map_versions: versions, fixes: 0, check_result: null });
   kick("check", p.id);

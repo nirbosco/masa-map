@@ -79,6 +79,7 @@ export default function Operator({ adminKey }) {
   if (err && !data) return <div className="center"><div className="error">{err}</div></div>;
   if (!data) return <div className="center"><span className="spin" /></div>;
   const ws = data.workshop;
+  const capHit = people.some((p) => /spending cap|RESOURCE_EXHAUSTED|429/.test(p.error || ""));
   const cur = open && people.find((p) => p.id === open);
 
   return (
@@ -95,6 +96,11 @@ export default function Operator({ adminKey }) {
       </header>
 
       <main className="op-main">
+        {capHit && (
+          <div className="error" role="alert" style={{ marginTop: 0, marginBottom: 14 }}>
+            הציור נעצר: נגמר תקציב החודש בחשבון Gemini, או שיש עומס זמני אצל גוגל. צריך להגדיל את תקרת ההוצאה ב-AI Studio (ai.studio/spend), ואז ללחוץ "לצייר מחדש" אצל מי שנתקע.
+          </div>
+        )}
         <div className="stats" role="tablist">
           {FILTERS.map((f) => (
             <button key={f.key} role="tab" aria-selected={filter === f.key} className={`stat ${filter === f.key ? "on" : ""}`} onClick={() => setFilter(f.key)}>
@@ -144,6 +150,7 @@ export default function Operator({ adminKey }) {
               <button className="icon-btn" onClick={() => setOpen(null)} aria-label="סגירה" autoFocus><Icon n="x" /></button>
             </div>
             <span className={`chip ${statusOf(cur).cls}`} style={{ justifySelf: "start", width: "fit-content" }}>{statusOf(cur).label}</span>
+            {cur.map_status === "failed" && cur.error && <div className="error" style={{ marginTop: 0 }}>הציור נכשל: {/spending cap/.test(cur.error) ? "נגמר תקציב החודש ב-Gemini" : cur.error.slice(0, 140)}</div>}
             {cur.typo_note && <div className="error" style={{ marginTop: 0 }}>המשתתף/ת דיווח/ה על טעות: {cur.typo_note}</div>}
             {cur.approved && <span className="chip ok" style={{ width: "fit-content" }}>אושרה להדפסה</span>}
             {cur.check_result?.flag && (

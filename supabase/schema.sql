@@ -182,13 +182,17 @@ end $$;
 create or replace function masa_claim(p_max int)
 returns setof masa_participants language plpgsql security definer set search_path = public as $$
 begin
-  -- עבודות שנתקעו חוזרות לתור
-  update masa_participants set map_status = 'queued', status_at = now()
-    where map_status in ('generating','checking','fixing') and status_at < now() - interval '6 minutes';
-  if (select count(*) from masa_participants where map_status in ('generating','fixing')) >= p_max then return; end if;
+  -- נעילה אחת לתור כולו: אין שתי הקצאות במקביל
+  perform pg_advisory_xact_lock(424242);
+  -- ריצה שלא סיימה ב-170 שניות נקטעה (מגבלת הפונקציה 150), חוזרת לתור
+  update masa_participants set map_status = 'queued', status_at = now(), error = 'נקטע, חוזר לתור'
+    where map_status = 'generating' and status_at < now() - interval '170 seconds';
+  update masa_participants set map_status = 'ready'
+    where map_status in ('checking','fixing') and status_at < now() - interval '3 minutes';
+  if (select count(*) from masa_participants where map_status = 'generating') >= p_max then return; end if;
   return query
-    update masa_participants set map_status = 'generating', status_at = now(), attempts = attempts + 1, error = null
-    where id = (select id from masa_participants where map_status = 'queued' order by status_at limit 1 for update skip locked)
+    update masa_participants set map_status = 'generating', status_at = now(), attempts = attempts + 1
+    where id = (select id from masa_participants where map_status = 'queued' order by created_at limit 1 for update skip locked)
     returning *;
 end $$;
 
