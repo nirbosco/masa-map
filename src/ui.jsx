@@ -10,6 +10,7 @@ const P = {
   print: "M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z",
   down2: "M12 3v12m0 0l-5-5m5 5l5-5M4 21h16",
   redo: "M20 11a8 8 0 10-2.3 5.7M20 4v7h-7",
+  back: "M9 6l6 6-6 6",
   trash: "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13",
   qr: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM18 18h3v3h-3z",
   warn: "M12 3l10 18H2L12 3zm0 7v5m0 3v.5",

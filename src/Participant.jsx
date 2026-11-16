@@ -69,8 +69,14 @@ export default function Participant({ token }) {
   else if (p.step === "world") body = <World p={p} token={token} update={update} />;
   else if (p.step === "review") body = <Review p={p} update={update} />;
   else if (!p.mode) body = <Mode p={p} update={update} />;
-  else if (p.mode === "chat") body = <Chat p={p} token={token} update={update} />;
-  else body = <Builder p={p} token={token} update={update} />;
+  else {
+    const back = p.workshop?.allow_chat && (
+      <button className="back-link no-print" onClick={() => { update({ mode: null }, true); window.scrollTo(0, 0); }}>
+        <Icon n="back" size={18} />חזרה לבחירת הדרך
+      </button>
+    );
+    body = <>{back}{p.mode === "chat" ? <Chat p={p} token={token} update={update} /> : <Builder p={p} token={token} update={update} />}</>;
+  }
 
   return <Shell who={p.name} ws={p.workshop?.name} f={f}>{body}</Shell>;
 }
@@ -95,6 +101,9 @@ function Mode({ p, update }) {
       <Steps at={0} />
       <h1 className="title">איך נספר את המסע?</h1>
       <p className="lead">{g(f, "בחרי", "בחר")} את הדרך שנוחה לך. בשתיהן המפה יוצאת אותו דבר.</p>
+      {(p.stations?.length > 0 || p.chat?.length > 1) && (
+        <p className="hint">מה {g(f, "שכתבת", "שכתבת")} עד עכשיו נשמר. אפשר לחזור אליו בכל רגע.</p>
+      )}
       <div className="mode-cards">
         <button className="choice mode-card" onClick={() => update({ mode: "build" }, true)}>
           <b>לכתוב תחנה אחרי תחנה</b><span className="hint">כ-15 דקות</span>

@@ -318,3 +318,7 @@ p { margin: 0; text-wrap: pretty; }
 .last-q { margin: 40px 0 0; padding: 36px 24px; border-radius: var(--r); background: var(--blue); color: #fff; text-align: center; }
 .last-q .hint { color: rgba(255,255,255,.8); }
 .last-q p:last-child { font-size: clamp(22px, 4.6vw, 30px); font-weight: 700; line-height: 1.35; margin-top: 8px; text-wrap: balance; }
+
+.back-link { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 6px 0; margin-bottom: 4px;
+  font: inherit; font-size: 15px; font-weight: 500; color: var(--ink-3); cursor: pointer; min-height: 44px; }
+.back-link:hover, .back-link:focus-visible { color: var(--blue, #0046ff); }
