@@ -271,3 +271,11 @@ begin
   return json_build_object('ok', found);
 end $$;
 grant execute on function masa_edit_workshop(text, text, jsonb) to anon, authenticated;
+
+-- ===== גרסה 1.3: המפעיל שולח למשתתף את הלינק האישי =====
+create or replace function masa_admin_me_token(p_admin text, p_id uuid)
+returns text language sql security definer set search_path = public as $$
+  select p.token from masa_participants p join masa_workshops w on w.id = p.workshop_id
+  where w.admin_key = p_admin and p.id = p_id;
+$$;
+grant execute on function masa_admin_me_token(text, uuid) to anon, authenticated;

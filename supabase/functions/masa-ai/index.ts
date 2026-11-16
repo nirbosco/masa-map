@@ -146,7 +146,7 @@ function composePrompt(p: any) {
   if (Array.isArray(p.chat) && p.chat.length) {
     source += `\n\nשיחה עם המלווה:\n` + p.chat.map((m: any) => `${m.role === "user" ? p.name : "מלווה"}: ${m.content}`).join("\n");
   }
-  const first = String(p.name).trim().split(/\s+/)[0];
+  const first = String(p.name).trim().replace(/\s+/g, " ");
   return `אתה העורך של "מפת המסע": פוסטר מאויר בהשראת מסע הגיבור. לפניך החומר ש${p.name} ${g(form, "כתבה", "כתב")}. לשון ${g(form, "נקבה", "זכר")}.
 
 החזר JSON בלבד, במבנה הזה:
@@ -244,7 +244,7 @@ function mapPrompt(p: any) {
   };
   const scenes = mt.stations.map((s: any, i: number) => `${i + 1}. ${s.scene}${BEAT[s.beat] ? ` (${BEAT[s.beat]})` : ""}`).join("\n");
   const side = (mt.side ?? []).map((s: any, i: number) => `Side branch ${i + 1}: a short side trail branching off the main route and ending at ${s.scene}.`).join("\n");
-  const labels = mt.stations.map((s: any, i: number) => `Station ${i + 1}: heading "${s.heading}", line under it "${s.sub}"`).join("\n");
+  const labels = mt.stations.map((s: any, i: number) => `Station ${i + 1} (medallion "${i + 1}"): heading "${s.heading}", line under it "${s.sub}"`).join("\n");
   const sideLabels = (mt.side ?? []).map((s: any, i: number) => `Side branch ${i + 1}: heading "נתיב", line under it "${s.sub}"`).join("\n");
   const gear = (mt.gear ?? []).length ? `An old parchment scroll in a lower corner. On it: heading "צידה לדרך", and below it each on its own line: ${mt.gear.map((x: string) => `"${x}"`).join(", ")}` : "";
 
@@ -252,22 +252,22 @@ function mapPrompt(p: any) {
 Style: ${style}. Light: ${mood}. Full of life, drama and small storytelling details.
 
 THE WORLD: ${world}.
-The route starts at the RIGHT edge (the past) and travels to the LEFT (the future), like Hebrew reading. It is one continuous journey with real drama: it climbs, descends, splits and rejoins. Along it there are exactly ${n} stations in this order from right to left, each one a rich illustrated scene with a glowing waypoint on the route:
+The route starts at the RIGHT edge (the past) and travels to the LEFT (the future), like Hebrew reading. It is one continuous journey with real drama: it climbs, descends and winds, and only short side trails branch off it. Along it there are exactly ${n} stations in this order from right to left, each one a rich illustrated scene. At each station the route passes through a large round numbered medallion (a waypoint disc) showing only its station number as a big bold digit: 1 at the first station on the right, then 2, 3 and so on up to ${n} at the last station on the left. The numbers make the order unmistakable, so the route must visit the medallions in exact numeric order 1, 2, 3 ... ${n}, as one unbroken path that never skips a station, never jumps back, and never crosses itself. Each number and each station scene appears EXACTLY ONCE on the whole map: there are exactly ${n} medallions, never two with the same number:
 ${scenes}
 ${side}
 A large ornate compass rose near the right start of the route, drawn with symbols only and no letters (no N, E, S, W).
 ${mt.horizon ? `Past the last station, at the far LEFT edge, the route continues toward an open horizon: ${mt.horizon}. No text there.` : ""}
 ${mt.anchor_object ? `A small ${mt.anchor_object} appears twice along the route, as a quiet companion of the journey.` : ""}
-Text hierarchy: each station heading is larger and bold; the line under it is smaller. Every label sits on a light, clean banner with strong contrast, never on top of busy detail.
+Text hierarchy: each station heading sits right beside its own number medallion; the heading is larger and bold, the line under it smaller. Every label sits on a light, clean banner with strong contrast, never on top of busy detail.
 ${p.notes ? `Personal detail to include somewhere on the map: ${p.notes}.` : ""}
 People appear only small and distant, as tiny travelers; no close-up faces. No flags, no national, religious or military symbols, no logos.
 
-HEBREW TEXT. Render every label EXACTLY as written, letter by letter, right-to-left, in a bold clean legible Hebrew typeface, each on a small banner or label plate next to its scene. Do not add any other text, words, numbers or letters anywhere (no English, no compass letters, no signs).
+HEBREW TEXT. Render every label EXACTLY as written, letter by letter, right-to-left, in a bold clean legible Hebrew typeface, each on a small banner or label plate next to its scene. Apart from the station number digits 1 to ${n} in the medallions, do not add any other text, words, numbers or letters anywhere (no English, no compass letters, no signs, no numbers on side branches).
 Title, large at the top: "${mt.title}"
 ${labels}
 ${sideLabels}
 ${gear}
-Each label appears exactly once. Spell every Hebrew word exactly; double-check letters that look alike (כ/ב, ג/נ, ר/ד, ה/ח).`;
+Each label and each number appears exactly once; count them: ${n} medallions, ${n} station headings. Spell every Hebrew word exactly; double-check letters that look alike (כ/ב, ג/נ, ר/ד, ה/ח).`;
 }
 
 // ---------- בדיקת הכיתוב ----------

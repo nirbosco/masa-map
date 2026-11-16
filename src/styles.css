@@ -322,3 +322,5 @@ p { margin: 0; text-wrap: pretty; }
 .back-link { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 6px 0; margin-bottom: 4px;
   font: inherit; font-size: 15px; font-weight: 500; color: var(--ink-3); cursor: pointer; min-height: 44px; }
 .back-link:hover, .back-link:focus-visible { color: var(--blue, #0046ff); }
+
+.sendlink { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }

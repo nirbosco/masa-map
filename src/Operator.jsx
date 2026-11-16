@@ -168,6 +168,7 @@ export default function Operator({ adminKey }) {
                 ? <button className="btn ghost" onClick={() => setPrint(cur, "none")}>לבטל סימון הודפסה</button>
                 : <button className="btn ghost" onClick={() => setPrint(cur, "printed")}>לסמן שהודפסה</button>}
             </div>
+            <SendLink key={cur.id} p={cur} adminKey={adminKey} />
             <div>
               <p className="group-title" style={{ marginTop: 6 }}>מה אמור להיות כתוב</p>
               <div className="labels">{labelsList(cur.map_text).map((l, i) => <span key={i}>{l}</span>)}</div>
@@ -197,6 +198,43 @@ function Projector({ code, name, onClose }) {
         {qr && <img className="qrbig" src={qr} alt="קוד QR להצטרפות" />}
         <p style={{ fontSize: "clamp(18px,2.2vw,26px)" }}>סורקים, או נכנסים לאתר ומקלידים את הקוד</p>
         <div className="big-code">{code}</div>
+      </div>
+    </div>
+  );
+}
+
+function SendLink({ p, adminKey }) {
+  const [url, setUrl] = useState("");
+  const [qr, setQr] = useState("");
+  const [phone, setPhone] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [err, setErr] = useState("");
+  useEffect(() => {
+    rpc("masa_admin_me_token", { p_admin: adminKey, p_id: p.id })
+      .then((t) => { if (!t) throw 0; const u = appUrl(`/me/${t}`); setUrl(u); return QRCode.toDataURL(u, { margin: 1, width: 360, color: { dark: "#0a1330" } }); })
+      .then(setQr).catch(() => setErr("לא הצלחנו להביא את הלינק."));
+  }, [p.id]);
+  const first = String(p.name || "").trim().split(/\s+/)[0];
+  const text = `היי ${first}, זו המפה שלך ממפת המסע, יחד עם הסיכום. אפשר להוריד אותה ולהדפיס: ${url}`;
+  const digits = phone.replace(/\D/g, "");
+  const intl = digits.startsWith("0") ? "972" + digits.slice(1) : digits;
+  const wa = `https://wa.me/${intl.length >= 11 ? intl : ""}?text=${encodeURIComponent(text)}`;
+  function copy() { navigator.clipboard?.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); }); }
+  if (err) return <div className="error" style={{ marginTop: 0 }}>{err}</div>;
+  if (!url) return null;
+  return (
+    <div className="sendlink">
+      <p className="group-title" style={{ margin: 0 }}>הלינק האישי של {first}</p>
+      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        {qr && <img src={qr} alt={`קוד QR לעמוד האישי של ${p.name}`} style={{ width: 112, height: 112, borderRadius: 8, background: "#fff" }} />}
+        <p className="hint" style={{ margin: 0 }}>אפשר לסרוק מהמסך, או לשלוח בווצאפ.</p>
+      </div>
+      <label className="field" style={{ gap: 4 }}><span style={{ fontSize: 14 }}>מספר טלפון (לא חובה)</span>
+        <input className="input" type="tel" inputMode="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="050-0000000" style={{ fontSize: 16, padding: "8px 12px" }} />
+      </label>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <a className="btn small primary" href={wa} target="_blank" rel="noopener">לשלוח בווצאפ</a>
+        <button className="btn small" onClick={copy}>{copied ? "הלינק הועתק" : "להעתיק לינק"}</button>
       </div>
     </div>
   );

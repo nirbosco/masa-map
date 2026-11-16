@@ -61,7 +61,7 @@ export default function Join({ code: initial }) {
               <label className="field">
                 <span>השם שלך</span>
                 <input className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} autoComplete="name" placeholder="שם פרטי ושם משפחה" />
-                <small>השם הפרטי יופיע בכותרת המפה</small>
+                <small>השם המלא יופיע בכותרת המפה</small>
               </label>
               <div className="field" role="radiogroup" aria-label="באיזו לשון לפנות">
                 <span>באיזו לשון לפנות?</span>

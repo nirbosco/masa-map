@@ -25,7 +25,7 @@ export const MOODS = [
 ];
 
 const EMPTY = () => ({ title: "", when: "", story: "", took: "" });
-const LIMIT = { heading: 18, sub: 26, side: 18, gear: 34, title: 24 };
+const LIMIT = { heading: 18, sub: 26, side: 18, gear: 34, title: 30 };
 
 function Steps({ at }) {
   return <div className="steps" aria-hidden="true">{[0, 1, 2, 3].map((i) => <span key={i} className={i <= at ? "on" : ""} />)}</div>;
