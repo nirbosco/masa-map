@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")"
 npx vite build
 cd dist
-[ -n "$CNAME" ] && echo "$CNAME" > CNAME
+echo "${CNAME:-masa.hotam.tech}" > CNAME
 touch .nojekyll
 git init -q -b gh-pages
 git add -A
